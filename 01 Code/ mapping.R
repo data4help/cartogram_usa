@@ -29,10 +29,10 @@ state_results_data$democratic_win = if_else(state_results_data$winner=="Blue",
                                             1, 0)
 states_w_winner = merge(states_sf, state_results_data, by="state_abbv")
 
-# Get the population data
+# Get the population and electoral data
 pop_data = read_excel(paste(RAW_PATH, "nst-est2019-01.xlsx", sep="/"), skip=3)
-select_pop_data = pop_data %>% select("...1", "2019")
-colnames(select_pop_data) = c("state_name", "population")
+select_pop_data = pop_data %>% select("...1", "2019", "Electoral Votes")
+colnames(select_pop_data) = c("state_name", "population", "elec_votes")
 filtered_data = filter(select_pop_data,
                        str_detect(select_pop_data$state_name, "\\."))
 filtered_data$state_name = gsub("\\.", "", filtered_data$state_name)
@@ -54,7 +54,7 @@ original_plot = plot(original_map,
      main="")
 dev.off()
 
-# Cartogram
+# Cartogram by population
 usa_cartogram = cartogram_cont(combined["population"], "population",
                                maxSizeError = 1.5)
 usa_cartogram$democratic_win = combined$winner
@@ -62,8 +62,23 @@ plot = tm_shape(usa_cartogram) +
   tm_fill("democratic_win", palette=color_list,
           legend.show=FALSE) +
   tm_borders("black") +
-  tm_layout(main.title="Cartogram - US Election 2020",
+  tm_layout(main.title="Cartogram by Population - US Election 2020",
             main.title.position="center", fontfamily="Times",
             title.size=2.0, frame = FALSE)
-jpg_file = paste(OUTPUT_PATH, "final_cartogram.jpg", sep="/")
+jpg_file = paste(OUTPUT_PATH, "pop_cartogram.jpg", sep="/")
 tmap_save(plot, jpg_file, width=1920, height=1080)
+
+# Cartogram by electoral votes
+usa_cartogram = cartogram_cont(combined["elec_votes"], "elec_votes",
+                               maxSizeError = 1.5)
+usa_cartogram$democratic_win = combined$winner
+plot = tm_shape(usa_cartogram) +
+  tm_fill("democratic_win", palette=color_list,
+          legend.show=FALSE) +
+  tm_borders("black") +
+  tm_layout(main.title="Cartogram by Electoral Votes - US Election 2020",
+            main.title.position="center", fontfamily="Times",
+            title.size=2.0, frame = FALSE)
+jpg_file = paste(OUTPUT_PATH, "ele_cartogram.jpg", sep="/")
+tmap_save(plot, jpg_file, width=1920, height=1080)
+
